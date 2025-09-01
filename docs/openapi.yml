@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Article Service API
-  version: 1.0.0
+  version: 1.1.0
   description: |
     Сервис для CRUD операций со статьями.
 
@@ -129,6 +129,30 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+          
+  /articles/search:
+    post:
+      summary: Семантический поиск статей
+      description: Поиск статей по смыслу текста через SearchService
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+      responses:
+        '200':
+          description: Список релевантных статей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Article'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 components:
   schemas:
@@ -182,6 +206,19 @@ components:
           type: array
           items:
             type: string
+    
+    SearchRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          description: Текстовый запрос для семантического поиска
+        limit:
+          type: integer
+          description: Максимальное количество статей для возврата
+          default: 3
 
   responses:
     BadRequest:
