@@ -2,17 +2,20 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"article_service/api"
+	"article_service/internal/grpc_client"
 )
 
 type articleHandler struct {
 	// Тут можно хранить зависимости: БД, логгер, клиент SearchService и т.д.
+	searchClient *grpc_client.SearchClient
 }
 
-func NewArticleHandler() api.Handler {
-	return &articleHandler{}
+func NewArticleHandler(searchClient *grpc_client.SearchClient) api.Handler {
+	return &articleHandler{searchClient: searchClient}
 }
 
 // GET /articles
@@ -100,6 +103,11 @@ func (h *articleHandler) ArticlesPost(ctx context.Context, req *api.ArticleCreat
 		UpdatedAt: api.NewOptDateTime(time.Now()),
 		Tags:      req.Tags,
 	}
+
+	if err := h.searchClient.IndexArticle(ctx, int32(article.ID.Value), req.Title, req.Content); err != nil {
+		return &api.InternalServerError{}, nil
+	}
+
 	return &article, nil
 }
 
@@ -115,5 +123,19 @@ func (h *articleHandler) ArticlesSearchPost(ctx context.Context, req *api.Search
 
 	//TODO логику запроса
 
-	return &api.ArticlesSearchPostOKApplicationJSON{}, nil
+	v, ok := req.Limit.Get()
+	if !ok {
+		v = 3
+	}
+
+	//TODO тут надо брать из БД статьи по вернувшимся ID
+	IDs, err := h.searchClient.SemanticSearch(ctx, req.Query, int32(v))
+	if err != nil {
+		// если gRPC не ответил или ошибка на сервере — возвращаем 500
+		return &api.InternalServerError{}, nil
+	}
+
+	fmt.Println(IDs)
+	res := api.ArticlesSearchPostOKApplicationJSON{}
+	return &res, nil
 }

@@ -24,14 +24,13 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ngrpc.proto\x12\x04grpc\"E\n\x17\x41rticleEmbeddingRequest\x12\n\n\x02id\x18\x01 \x01(\x05\x12\r\n\x05title\x18\x02 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x03 \x01(\t\"\x1a\n\x18\x41rticleEmbeddingResponse\"-\n\rSearchRequest\x12\r\n\x05query\x18\x01 \x01(\t\x12\r\n\x05limit\x18\x02 \x01(\x05\"%\n\x0eSearchResponse\x12\x13\n\x0b\x61rticle_ids\x18\x01 \x03(\x05\x32\x9b\x01\n\rSearchService\x12M\n\x0cIndexArticle\x12\x1d.grpc.ArticleEmbeddingRequest\x1a\x1e.grpc.ArticleEmbeddingResponse\x12;\n\x0eSemanticSearch\x12\x13.grpc.SearchRequest\x1a\x14.grpc.SearchResponseB\x08Z\x06./grpcb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ngrpc.proto\x12\x04grpc\"E\n\x17\x41rticleEmbeddingRequest\x12\n\n\x02id\x18\x01 \x01(\x05\x12\r\n\x05title\x18\x02 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x03 \x01(\t\"\x1a\n\x18\x41rticleEmbeddingResponse\"-\n\rSearchRequest\x12\r\n\x05query\x18\x01 \x01(\t\x12\r\n\x05limit\x18\x02 \x01(\x05\"%\n\x0eSearchResponse\x12\x13\n\x0b\x61rticle_ids\x18\x01 \x03(\x05\x32\x9b\x01\n\rSearchService\x12M\n\x0cIndexArticle\x12\x1d.grpc.ArticleEmbeddingRequest\x1a\x1e.grpc.ArticleEmbeddingResponse\x12;\n\x0eSemanticSearch\x12\x13.grpc.SearchRequest\x1a\x14.grpc.SearchResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'grpc_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
-  _globals['DESCRIPTOR']._loaded_options = None
-  _globals['DESCRIPTOR']._serialized_options = b'Z\006./grpc'
+  DESCRIPTOR._loaded_options = None
   _globals['_ARTICLEEMBEDDINGREQUEST']._serialized_start=20
   _globals['_ARTICLEEMBEDDINGREQUEST']._serialized_end=89
   _globals['_ARTICLEEMBEDDINGRESPONSE']._serialized_start=91

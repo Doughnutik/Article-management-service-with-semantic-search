@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-import grpc_pb2 as grpc__pb2
+import grpc_python.grpc_pb2 as grpc__pb2
 
 GRPC_GENERATED_VERSION = '1.74.0'
 GRPC_VERSION = grpc.__version__
