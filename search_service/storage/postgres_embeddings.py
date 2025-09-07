@@ -1,5 +1,4 @@
 import psycopg2
-from psycopg2.extras import execute_values
 import numpy as np
 
 class PostgresEmbeddings:
@@ -14,8 +13,7 @@ class PostgresEmbeddings:
         """Вставка новой пары id, embedding"""
         with self.conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO embeddings (id, embedding) VALUES (%s, %s) "
-                "ON CONFLICT (id) DO UPDATE SET embedding = EXCLUDED.embedding",
+                "INSERT INTO embeddings (id, embedding) VALUES (%s, %s)",
                 (id, embedding.tolist())
             )
 
@@ -32,7 +30,7 @@ class PostgresEmbeddings:
                 (embedding.tolist(), id)
             )
 
-    def search_similar(self, query_vector: np.ndarray, k: int = 3):
+    def search_similar(self, query_vector: np.ndarray, k: int = 3) -> list[int]:
         """
         Поиск k ближайших embedding по косинусной близости
         Возвращает список id
@@ -42,7 +40,7 @@ class PostgresEmbeddings:
                 """
                 SELECT id
                 FROM embeddings
-                ORDER BY embedding <#> %s
+                ORDER BY embedding <=> %s
                 LIMIT %s
                 """,
                 (query_vector.tolist(), k)
