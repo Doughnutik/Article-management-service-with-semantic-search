@@ -1,6 +1,6 @@
 import numpy as np
 import psycopg
-
+import asyncio
 
 class AsyncPostgresEmbeddings:
     def __init__(self, dsn: str):
@@ -19,8 +19,12 @@ class AsyncPostgresEmbeddings:
         """Вставка новой пары id, embedding"""
         async with self.conn.cursor() as cur:
             await cur.execute(
-                "INSERT INTO embeddings (id, embedding) VALUES (%s, %s)",
-                (id, embedding)
+                """
+                INSERT INTO embeddings (id, embedding)
+                VALUES (%s, %s)
+                ON CONFLICT (id) DO UPDATE SET embedding = EXCLUDED.embedding
+                """,
+                (id, embedding.tolist())
             )
 
     async def delete_embedding(self, id: int):
@@ -39,7 +43,7 @@ class AsyncPostgresEmbeddings:
         async with self.conn.cursor() as cur:
             await cur.execute(
                 "UPDATE embeddings SET embedding = %s WHERE id = %s",
-                (embedding, id)
+                (embedding.tolist(), id)
             )
 
     async def search_similar(self, query_vector: np.ndarray, k: int = 3) -> list[int]:
@@ -52,10 +56,33 @@ class AsyncPostgresEmbeddings:
                 """
                 SELECT id
                 FROM embeddings
-                ORDER BY embedding <=> %s
+                ORDER BY embedding <=> %s::vector
                 LIMIT %s
                 """,
-                (query_vector, k)
+                (query_vector.tolist(), k)
             )
             rows = await cur.fetchall()
         return [r[0] for r in rows]
+    
+if __name__ == "__main__":
+    async def main():
+        dsn = "postgresql://artem:1234@localhost:5432/embeddings"
+        db = AsyncPostgresEmbeddings(dsn)
+        await db.connect()
+
+        embedding = np.random.rand(1024).astype(np.float32)
+        await db.insert_embedding(1, embedding)
+        print("Inserted embedding for id=1")
+
+        new_embedding = np.random.rand(1024).astype(np.float32)
+        await db.update_embedding(1, new_embedding)
+        print("Updated embedding for id=1")
+
+        query_vec = np.random.rand(1024).astype(np.float32)
+        nearest_ids = await db.search_similar(query_vec, k=3)
+        print("Nearest IDs:", nearest_ids)
+
+        await db.delete_embedding(1)
+        print("Deleted embedding for id=1")
+
+    asyncio.run(main())

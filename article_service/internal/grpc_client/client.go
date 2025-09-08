@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	pb "article_service/grpc_go" // путь к сгенерированному grpc коду
+	pb "article_service/grpc_go"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

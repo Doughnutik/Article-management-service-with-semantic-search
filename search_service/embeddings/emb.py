@@ -22,7 +22,7 @@ class ArticleEmbedder:
         """
         return self.model.encode(text, task="retrieval.query", normalize_embeddings=True, convert_to_numpy=True, truncate_dim=self.dim)
     
-    def distance(self, first_emb: np.ndarray, second_emb: np.ndarray):
+    def cosine_similarity(self, first_emb: np.ndarray, second_emb: np.ndarray):
         scal_prod = first_emb @ second_emb
         v1 = first_emb @ first_emb
         v2 = second_emb @ second_emb
@@ -48,4 +48,4 @@ if __name__ == "__main__":
     query_embedding = embedder.embed_query(query)
     
     for i in article_embeddings:
-        print(embedder.distance(i, query_embedding))
+        print(embedder.cosine_similarity(i, query_embedding))

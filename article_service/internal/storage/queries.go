@@ -103,7 +103,7 @@ func (p *Postgres) DeleteArticle(ctx context.Context, id int) error {
 	return err
 }
 
-func (p *Postgres) ListArticles(ctx context.Context, limit int) ([]api.Article, error) {
+func (p *Postgres) ListArticles(ctx context.Context, pages int, limit int) (api.ArticlesGetOKApplicationJSON, error) {
 	rows, err := p.Pool.Query(
 		ctx,
 		`SELECT id, title, content, author, updated_at, tags
@@ -117,7 +117,7 @@ func (p *Postgres) ListArticles(ctx context.Context, limit int) ([]api.Article, 
 	}
 	defer rows.Close()
 
-	var articles []api.Article
+	var articles api.ArticlesGetOKApplicationJSON
 	for rows.Next() {
 		var a api.Article
 		err := rows.Scan(&a.ID, &a.Title, &a.Content, &a.Author, &a.UpdatedAt, &a.Tags)

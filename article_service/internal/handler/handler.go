@@ -7,15 +7,19 @@ import (
 
 	"article_service/api"
 	"article_service/internal/grpc_client"
+	"article_service/internal/storage"
 )
 
 type articleHandler struct {
-	// Тут можно хранить зависимости: БД, логгер, клиент SearchService и т.д.
+	db           *storage.Postgres
 	searchClient *grpc_client.SearchClient
 }
 
-func NewArticleHandler(searchClient *grpc_client.SearchClient) api.Handler {
-	return &articleHandler{searchClient: searchClient}
+func NewArticleHandler(db *storage.Postgres, searchClient *grpc_client.SearchClient) api.Handler {
+	return &articleHandler{
+		db:           db,
+		searchClient: searchClient,
+	}
 }
 
 // GET /articles
@@ -27,9 +31,12 @@ func (h *articleHandler) ArticlesGet(ctx context.Context, params api.ArticlesGet
 		return &api.BadRequest{}, nil
 	}
 
-	//TODO логику запроса
+	res, err := h.db.ListArticles(ctx, params.Page.Or(1), params.Limit.Or(3))
+	if err != nil {
+		return &api.InternalServerError{}, nil
+	}
 
-	return &api.ArticlesGetOKApplicationJSON{}, nil
+	return &res, nil
 }
 
 // GET /articles/{id}
@@ -38,17 +45,14 @@ func (h *articleHandler) ArticlesIDGet(ctx context.Context, params api.ArticlesI
 		return &api.BadRequest{}, nil
 	}
 
-	//TODO логику запроса
+	var res api.Article
+	err := h.db.Pool.QueryRow(ctx, "SELECT id, title, content, author, updated_at, tags FROM articles WHERE id=$1", params.ID).
+		Scan(&res.ID.Value, &res.Title.Value, &res.Content.Value, &res.Author.Value, &res.UpdatedAt.Value, &res.Tags)
 
-	article := api.Article{
-		ID:        api.NewOptInt(params.ID),
-		Title:     api.NewOptString("DemoTitle"),
-		Content:   api.NewOptString("DemoContent"),
-		Author:    api.NewOptString("DemoAuthor"),
-		UpdatedAt: api.NewOptDateTime(time.Now()),
-		Tags:      []string{"demotag1", "demotag2"},
+	if err != nil {
+		return &api.InternalServerError{}, nil
 	}
-	return &article, nil
+	return &res, nil
 }
 
 // DELETE /articles/{id}
@@ -57,7 +61,10 @@ func (h *articleHandler) ArticlesIDDelete(ctx context.Context, params api.Articl
 		return &api.BadRequest{}, nil
 	}
 
-	//TODO логику запроса
+	_, err := h.db.Pool.Exec(ctx, "DELETE FROM articles WHERE id=$1", params.ID)
+	if err != nil {
+		return &api.InternalServerError{}, nil
+	}
 
 	return &api.ArticlesIDDeleteNoContent{}, nil
 }
@@ -71,15 +78,19 @@ func (h *articleHandler) ArticlesIDPut(ctx context.Context, req *api.ArticleUpda
 		return &api.BadRequest{}, nil
 	}
 
-	//TODO логику запроса
+	_, err := h.db.Pool.Exec(ctx, "UPDATE articles SET title=$1, content=$2, author=$3, updated_at=$4, tags=$5 WHERE id=$6",
+		req.Title, req.Content, req.Author, time.Now(), req.Tags, params.ID)
+	if err != nil {
+		return &api.InternalServerError{}, nil
+	}
 
 	article := api.Article{
 		ID:        api.NewOptInt(params.ID),
-		Title:     api.NewOptString("UpdatedTitle"),
-		Content:   api.NewOptString("UpdatedContent"),
-		Author:    api.NewOptString("UpdatedAuthor"),
+		Title:     api.NewOptString(req.Title),
+		Content:   api.NewOptString(req.Content),
+		Author:    api.NewOptString(req.Author),
 		UpdatedAt: api.NewOptDateTime(time.Now()),
-		Tags:      []string{"updatedtag1", "updatedtag2"},
+		Tags:      req.Tags,
 	}
 	return &article, nil
 }
