@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"article_service/api"
 	"article_service/internal/grpc_client"
@@ -36,7 +35,7 @@ func (h *articleHandler) ArticlesGet(ctx context.Context, params api.ArticlesGet
 		return &api.InternalServerError{}, nil
 	}
 
-	return &res, nil
+	return res, nil
 }
 
 // GET /articles/{id}
@@ -44,15 +43,12 @@ func (h *articleHandler) ArticlesIDGet(ctx context.Context, params api.ArticlesI
 	if params.ID < 0 {
 		return &api.BadRequest{}, nil
 	}
-
-	var res api.Article
-	err := h.db.Pool.QueryRow(ctx, "SELECT id, title, content, author, updated_at, tags FROM articles WHERE id=$1", params.ID).
-		Scan(&res.ID.Value, &res.Title.Value, &res.Content.Value, &res.Author.Value, &res.UpdatedAt.Value, &res.Tags)
+	res, err := h.db.GetArticle(ctx, params.ID)
 
 	if err != nil {
 		return &api.InternalServerError{}, nil
 	}
-	return &res, nil
+	return res, nil
 }
 
 // DELETE /articles/{id}
@@ -78,21 +74,12 @@ func (h *articleHandler) ArticlesIDPut(ctx context.Context, req *api.ArticleUpda
 		return &api.BadRequest{}, nil
 	}
 
-	_, err := h.db.Pool.Exec(ctx, "UPDATE articles SET title=$1, content=$2, author=$3, updated_at=$4, tags=$5 WHERE id=$6",
-		req.Title, req.Content, req.Author, time.Now(), req.Tags, params.ID)
+	res, err := h.db.UpdateArticle(ctx, params.ID, req)
+
 	if err != nil {
 		return &api.InternalServerError{}, nil
 	}
-
-	article := api.Article{
-		ID:        api.NewOptInt(params.ID),
-		Title:     api.NewOptString(req.Title),
-		Content:   api.NewOptString(req.Content),
-		Author:    api.NewOptString(req.Author),
-		UpdatedAt: api.NewOptDateTime(time.Now()),
-		Tags:      req.Tags,
-	}
-	return &article, nil
+	return res, nil
 }
 
 // POST /articles
@@ -104,22 +91,11 @@ func (h *articleHandler) ArticlesPost(ctx context.Context, req *api.ArticleCreat
 		return &api.BadRequest{}, nil
 	}
 
-	//TODO логику запроса
-
-	article := api.Article{
-		ID:        api.NewOptInt(0),
-		Title:     api.NewOptString(req.Title),
-		Content:   api.NewOptString(req.Content),
-		Author:    api.NewOptString(req.Author),
-		UpdatedAt: api.NewOptDateTime(time.Now()),
-		Tags:      req.Tags,
-	}
-
-	if err := h.searchClient.IndexArticle(ctx, int32(article.ID.Value), req.Title, req.Content); err != nil {
+	res, err := h.db.CreateArticle(ctx, req)
+	if err != nil {
 		return &api.InternalServerError{}, nil
 	}
-
-	return &article, nil
+	return res, nil
 }
 
 // POST /articles/search
@@ -130,13 +106,6 @@ func (h *articleHandler) ArticlesSearchPost(ctx context.Context, req *api.Search
 
 	if v, ok := req.Limit.Get(); ok && v < 1 {
 		return &api.BadRequest{}, nil
-	}
-
-	//TODO логику запроса
-
-	v, ok := req.Limit.Get()
-	if !ok {
-		v = 3
 	}
 
 	//TODO тут надо брать из БД статьи по вернувшимся ID
